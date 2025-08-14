@@ -15,7 +15,7 @@ let player_radius = 33;
 const tank_MaxSpeed = 5;
 const player_accel = 0.07;
 
-const drone_MaxSpeed = 8.5;
+const drone_MaxSpeed = 8;
 const drone_accel = 0.04;
 const drone_radius = 9;
 //------COLORS----------
@@ -33,6 +33,16 @@ let player = {
     vy: 0
 }
 
+
+let targets = [
+    {
+        x: 200,
+        y: 200,
+        vx: 0,
+        vy: 0,
+        hp: 10
+    }
+];
 
 let playerDrones = [
     {
@@ -306,7 +316,7 @@ ctx = canvas.getContext("2d");
             if (this.checked) {
                 chosenMode = this.value;
                 if (this.value === 'aim') {              
-                    description.textContent = 'This mode trains your skill to control your drones. You need this to hit and damage your opponents. Try focusing on any target and perfectly following it with your drones until you kill it.';
+                    description.textContent = 'Use left or right mouse to repel drones. This mode trains your skill to control your drones. You need this to hit and damage your opponents. Try focusing on any target and perfectly following it with your drones until you kill it.';
                 } else if (this.value === 'dodge') {
                     description.textContent = 'This mode trains your skill to avoid enemy\'s drones. You need this to prevent yourself from getting hit. Just drones that spawn as long as you can without getting hit.';
                 } else if (this.value === 'repel') {
