@@ -9,21 +9,31 @@ let mouseX = 0;
 let mouseY = 0;
 let mouseIsDown = false;
 //----------
-let map_width = 1500;
-let map_height = 1500;
+let map_width = 1300;
+let map_height = 1300;
 let player_radius = 33;
-const tank_MaxSpeed = 5;
-const player_accel = 0.07;
+let tank_MaxSpeed = 5;
+let player_accel = 0.07;
 
-const drone_MaxSpeed = 8;
-const drone_accel = 0.04;
-const drone_radius = 9;
+let droneStartingSpeed = 5;
+let drone_MaxSpeed = 8;
+let drone_accel = 0.03;
+
+const drone_radius = 9.5;
+let playerReload = 2000;
+
+let startTime = Date.now();
+let kill_count = 0;
+let practiceMode = false;
+
+let lastTimeShooting = Date.now();
 //------COLORS----------
 let colors = {
     background: "#a5b2a5",
     darkerbackground: "#939e93ff",
     player: "#4f93b5",
-    enemy: "#e14f65"
+    enemy: "#e14f65",
+    health: "#aad35d"
 }
 
 let player = {
@@ -34,67 +44,9 @@ let player = {
 }
 
 
-let targets = [
-    {
-        x: 200,
-        y: 200,
-        vx: 0,
-        vy: 0,
-        hp: 10
-    }
-];
+let targets = [];
 
-let playerDrones = [
-    {
-        x: player.x,
-        y: player.y,
-        vx: 0,
-        vy: 0
-    },
-    {
-        x: player.x,
-        y: player.y,
-        vx: 0,
-        vy: 0
-    },
-    {
-        x: player.x,
-        y: player.y,
-        vx: 0,
-        vy: 0
-    },
-    {
-        x: player.x,
-        y: player.y,
-        vx: 0,
-        vy: 0
-    },
-    {
-        x: player.x,
-        y: player.y,
-        vx: 0,
-        vy: 0
-    },
-    {
-        x: player.x,
-        y: player.y,
-        vx: 0,
-        vy: 0
-    },
-    {
-        x: player.x,
-        y: player.y,
-        vx: 0,
-        vy: 0
-    },
-    {
-        x: player.x,
-        y: player.y,
-        vx: 0,
-        vy: 0
-    }
-]
-
+let playerDrones = [];
 
 let controlKeys = {
     W: false,
@@ -132,7 +84,7 @@ function drawPlayer() {
             vx = vx / vlen * player_radius;
             vy = vy / vlen * player_radius;
             ctx.strokeStyle = "#000000";
-            ctx.lineWidth = 2.5;
+            ctx.lineWidth = 2.75;
             ctx.moveTo(player.x, player.y);
             ctx.lineTo(player.x + vx, player.y + vy);
         ctx.closePath();
@@ -144,6 +96,8 @@ function drawPlayer() {
 
 function drawPlayerDrones() {
     ctx.save();
+    ctx.fillStyle = colors.player;
+    ctx.strokeStyle = "#373834";
     for (let drone of playerDrones) {
         ctx.save();
         
@@ -161,7 +115,6 @@ function drawPlayerDrones() {
         let y3 = R * Math.sin(Math.PI * 4 / 3);
 
         let angle = Math.atan2(drone.vy, drone.vx);
-        console.log(angle);
         
         ctx.rotate(angle);
         ctx.beginPath();
@@ -170,15 +123,36 @@ function drawPlayerDrones() {
         ctx.lineTo(x3, y3);
         ctx.closePath()
 
-        ctx.fillStyle = colors.player;
-        ctx.strokeStyle = "#373834";
-
         ctx.fill();
         ctx.stroke();
         ctx.restore();
     }
     ctx.restore();
 }
+
+
+function drawTargets() {
+    ctx.save();
+        for (let target of targets) {
+            ctx.fillStyle = colors.enemy;
+            ctx.strokeStyle = "#373834";
+            ctx.beginPath();
+            ctx.arc(target.x, target.y, player_radius, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            if (target.hp < 16) {
+                ctx.fillStyle = "#373834";
+                ctx.fillRect(target.x - 40, target.y + 45, 80, 8);
+
+                ctx.fillStyle = colors.health;
+                ctx.fillRect(target.x - 38, target.y + 47, 76 * target.hp / 16, 4);
+            }
+        }
+    ctx.restore();
+}
+
 
 function handlePlayerMovement() {
     if (controlKeys.W) {
@@ -223,6 +197,28 @@ function handlePlayerMovement() {
 function handlePlayerDrones() {
     let mx = mouseX + player.x - window.innerWidth / 2;
     let my = mouseY + player.y - window.innerHeight / 2;
+
+    if (Date.now() - lastTimeShooting > playerReload) {
+        //4 barrels
+        for (let i = 0; i < 4; ++i) {
+            if (playerDrones.length < 8) {
+                let angle = Math.atan2(my, mx) + Math.PI / 2 * i + Math.PI / 4;
+
+                let newDrone = {
+                        x: player.x,
+                        y: player.y,
+                        vx: Math.cos(angle) * droneStartingSpeed,
+                        vy: Math.sin(angle) * droneStartingSpeed
+                };
+
+                playerDrones.push(newDrone);
+                lastTimeShooting = Date.now();
+            }
+        }
+        
+        
+    }
+
     for (let drone of playerDrones) {
         
         let vx = mx - drone.x;
@@ -256,7 +252,6 @@ function handlePlayerDrones() {
 
     for (let drone of playerDrones) {
         for (let drone2 of playerDrones) {
-            console.log(drone !== drone2 && collide(drone.x, drone.y, drone_radius, drone2.x, drone2.y, drone_radius));
             if (drone !== drone2 && collide(drone.x, drone.y, drone_radius, drone2.x, drone2.y, drone_radius)) {
                 let dvx = drone2.x - drone.x;
                 let dvy = drone2.y - drone.y;
@@ -280,6 +275,98 @@ function handlePlayerDrones() {
 }
 
 
+function handleTargets() {
+    while (targets.length < 7) {
+        let newTarget = {
+            x: Math.random() * map_width,
+            y: Math.random() * map_height,
+            vx: 0,
+            vy: 0,
+            hp: 16,
+            keys: {
+            W: false,
+            A: false,
+            S: false,
+            D: false
+        },
+        nextChange: Date.now()
+        };
+        targets.push(newTarget);
+        
+    }
+
+    for (const [index, target] of targets.entries()) {
+        if (Date.now() > target.nextChange) {
+            let potential = 1;
+            do {
+                target.keys = {
+                    W: Math.random() < 0.5,
+                    A: Math.random() < 0.5,
+                    S: Math.random() < 0.5,
+                    D: Math.random() < 0.5,
+                }
+                
+                potential = Number(target.keys.W) - Number(target.keys.S) + Number(target.keys.D) - Number(target.keys.A);
+            } while (potential === 0);
+            target.nextChange = Date.now() + (Math.floor(700 + Math.random() * 700)) * ((practiceMode) ? 2 : 1);
+        }
+
+        if (target.keys.W) {
+            target.vy = lerp(target.vy, -tank_MaxSpeed, player_accel);
+        }
+
+        if (target.keys.S) {
+            target.vy = lerp(target.vy, tank_MaxSpeed, player_accel);
+        }
+
+        if (!target.keys.W && !target.keys.S) {
+            target.vy = lerp(target.vy, 0, player_accel);
+        }
+
+        if (target.keys.A) {
+            target.vx = lerp(target.vx, -tank_MaxSpeed, player_accel);
+        }
+
+        if (target.keys.D) {
+            target.vx = lerp(target.vx, tank_MaxSpeed, player_accel);
+        }
+
+        if (!target.keys.A && !target.keys.D) {
+            target.vx = lerp(target.vx, 0, player_accel);
+        }
+
+    
+        let spd = Math.hypot(target.vy, target.vx);
+        if (spd > tank_MaxSpeed) {
+            target.vx = target.vx / spd * tank_MaxSpeed;
+            target.vy = target.vy / spd * tank_MaxSpeed;
+        }
+
+        for (let i = 0; i < playerDrones.length; ++i) {
+            let drone = playerDrones[i];
+            if (collide(target.x, target.y, player_radius, drone.x, drone.y, drone_radius)) {
+                playerDrones.splice(i, 1);
+                target.hp--;
+            }
+        }
+
+        if (target.hp <= 0) {
+            targets.splice(index, 1);
+            ++kill_count;
+            continue;
+        }
+
+        target.x += target.vx;
+        target.y += target.vy;
+
+        if (target.x < 0) target.x = 0;
+        if (target.x > map_width) target.x = map_width;
+        if (target.y < 0) target.y = 0;
+        if (target.y > map_height) target.y = map_height;
+    }
+}
+
+
 function gameCycle() {
     ctx.save()
         ctx.fillStyle = colors.darkerbackground;
@@ -287,17 +374,41 @@ function gameCycle() {
     ctx.restore();
     ctx.save()
     ctx.strokeStyle = "#373834";
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = 2.75;
     ctx.translate(-player.x + canvas.width / 2, -player.y + canvas.height / 2);
     ctx.fillStyle = colors.background;
     ctx.fillRect(0, 0, map_width, map_height);
-    if (mode === "aim") drawPlayerDrones();
+    if (mode === "aim") {
+        drawPlayerDrones();
+        drawTargets();
+    }
     drawPlayer();
     ctx.restore();
 
+    if (mode === "aim") {
+        ctx.font = " 600 25px ubuntu";
+        ctx.textAlign = "left";
+        ctx.fillStyle = "#ffffff";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 5;
+        ctx.beginPath()
+        ctx.strokeText("Time(s): " + Math.floor((Date.now() - startTime) / 1000), 10, 40);
+        ctx.fillText("Time(s): " + Math.floor((Date.now() - startTime) / 1000), 10, 40);
+        ctx.closePath();
+    
+        ctx.strokeText("Kills: " + kill_count.toString(), 10, 70);
+        ctx.fillText("Kills: " + kill_count.toString(), 10, 70);
+
+        ctx.fillStyle = "#d1ff05ff";
+        ctx.strokeText("Practice Mode(Press [K]): " + ((practiceMode) ? "enabled" : "disabled"), 10, 100);
+        ctx.fillText("Practice Mode(Press [K]): " + ((practiceMode) ? "enabled" : "disabled"), 10, 100);
+    }
 
     handlePlayerMovement();
-    if (mode === "aim") handlePlayerDrones();
+    if (mode === "aim") {
+        handlePlayerDrones();
+        handleTargets();
+    }
 }
 
 
@@ -332,13 +443,26 @@ ctx = canvas.getContext("2d");
         canvas.style.visibility = "visible";
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
+        startTime = Date.now();
         setInterval(gameCycle, 1000 / 60);
     }
 }
 
 
 document.addEventListener('keydown', function(event) {
-  // Check if the 'Enter' key was pressed
+
+  if (mode === "menu") {
+    if (event.code === "Enter") {
+        mode = chosenMode;
+        menu.style.display = "none";
+        canvas.style.visibility = "visible";
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        startTime = Date.now();
+        setInterval(gameCycle, 1000 / 60);
+    }
+   }
+
   if (mode !== "menu") {
     if (event.code === 'KeyW') {
         controlKeys.W = true;
@@ -354,6 +478,29 @@ document.addEventListener('keydown', function(event) {
 
     if (event.code === "KeyD") {
         controlKeys.D = true;
+    }
+  }
+
+  if (mode === "aim") {
+    if (event.code === "KeyK") {
+        practiceMode = !practiceMode;
+        if (practiceMode) {
+            tank_MaxSpeed = 5 / 2;
+            player_accel = 0.07 / 2;
+
+            droneStartingSpeed = 5 / 2;
+            drone_MaxSpeed = 8 / 2;
+            drone_accel = 0.03 / 2;
+            playerReload = 2000 * 2;
+        } else {
+            tank_MaxSpeed = 5;
+            player_accel = 0.07;
+
+            droneStartingSpeed = 5;
+            drone_MaxSpeed = 8;
+            drone_accel = 0.03;
+            playerReload = 2000;
+        }
     }
   }
 });
