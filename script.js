@@ -25,6 +25,8 @@ let playerReload = 2000;
 let startTime = Date.now();
 let kill_count = 0;
 let practiceMode = false;
+let pause = false;
+let pauseTime = Date.now();
 
 let lastTimeShooting = Date.now();
 //------COLORS----------
@@ -392,8 +394,14 @@ function gameCycle() {
         ctx.strokeStyle = "#000000";
         ctx.lineWidth = 5;
         ctx.beginPath()
-        ctx.strokeText("Time(s): " + Math.floor((Date.now() - startTime) / 1000), 10, 40);
-        ctx.fillText("Time(s): " + Math.floor((Date.now() - startTime) / 1000), 10, 40);
+
+        if (!pause) {
+            ctx.strokeText("Time(s): " + Math.floor((Date.now() - startTime) / 1000), 10, 40);
+            ctx.fillText("Time(s): " + Math.floor((Date.now() - startTime) / 1000), 10, 40);
+        } else {
+            ctx.strokeText("Time(s): " + Math.floor((pauseTime - startTime) / 1000), 10, 40);
+            ctx.fillText("Time(s): " + Math.floor((pauseTime - startTime) / 1000), 10, 40);
+        }
         ctx.closePath();
     
         ctx.strokeText("Kills: " + kill_count.toString(), 10, 70);
@@ -402,10 +410,21 @@ function gameCycle() {
         ctx.fillStyle = "#d1ff05ff";
         ctx.strokeText("Practice Mode(Press [K]): " + ((practiceMode) ? "enabled" : "disabled"), 10, 100);
         ctx.fillText("Practice Mode(Press [K]): " + ((practiceMode) ? "enabled" : "disabled"), 10, 100);
+
+        ctx.strokeText("Pause(Press [P]): " + ((pause) ? "enabled" : "disabled"), 10, 130);
+        ctx.fillText("Pause(Press [P]): " + ((pause) ? "enabled" : "disabled"), 10, 130);
+
+        ctx.fillStyle = "#ffffff";
+        if (startTime !== Date.now()) {
+            let kps = (kill_count / (Date.now() - startTime) * 1000).toFixed(3);
+            ctx.strokeText("Kills per second: " + kps.toString(), 10, 160);
+            ctx.fillText("Kills per second: " + kps.toString(), 10, 160);
+        }
     }
 
-    handlePlayerMovement();
-    if (mode === "aim") {
+    
+    if (!pause) handlePlayerMovement();
+    if (mode === "aim" && !pause) {
         handlePlayerDrones();
         handleTargets();
     }
@@ -501,6 +520,14 @@ document.addEventListener('keydown', function(event) {
             drone_accel = 0.03;
             playerReload = 2000;
         }
+    }
+
+    if (event.code === "KeyP") {
+        pause = !pause;
+        if (!pause) {
+            startTime += Date.now() - pauseTime;
+        }
+        pauseTime = Date.now();
     }
   }
 });
