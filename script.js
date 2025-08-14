@@ -42,13 +42,18 @@ let player = {
     x: 750,
     y: 750,
     vx: 0,
-    vy: 0
+    vy: 0,
+    hp: 8
 }
 
 
 let targets = [];
 
 let playerDrones = [];
+let wildDrones = [];
+let dronecount = 0;
+let playerDead = false;
+let lastDroneSpawn = Date.now();
 
 let controlKeys = {
     W: false,
@@ -92,6 +97,16 @@ function drawPlayer() {
         ctx.closePath();
             ctx.stroke()
         ctx.restore();
+
+        if (mode === "dodge") {
+            if (player.hp < 8) {
+                ctx.fillStyle = "#373834";
+                ctx.fillRect(player.x - 40, player.y + 45, 80, 8);
+
+                ctx.fillStyle = colors.health;
+                ctx.fillRect(player.x - 38, player.y + 47, 76 * player.hp / 8, 4);
+            }
+        }
     ctx.restore();
 }
 
@@ -132,6 +147,42 @@ function drawPlayerDrones() {
     ctx.restore();
 }
 
+
+function drawWildDrones() {
+    ctx.save();
+    ctx.fillStyle = colors.enemy;
+    ctx.strokeStyle = "#373834";
+    for (let drone of wildDrones) {
+        ctx.save();
+        
+        
+        ctx.translate(drone.x, drone.y)
+
+        let R = drone_radius * 2;
+        let x1 = R;
+        let y1 = 0;
+
+        let x2 = R * Math.cos(Math.PI * 2 / 3);
+        let y2 = R * Math.sin(Math.PI * 2 / 3);
+
+        let x3 = R * Math.cos(Math.PI * 4 / 3);
+        let y3 = R * Math.sin(Math.PI * 4 / 3);
+
+        let angle = Math.atan2(drone.vy, drone.vx);
+        
+        ctx.rotate(angle);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.lineTo(x3, y3);
+        ctx.closePath()
+
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+    }
+    ctx.restore();
+}
 
 function drawTargets() {
     ctx.save();
@@ -277,6 +328,84 @@ function handlePlayerDrones() {
 }
 
 
+function handleWildDrones() {
+    if (Date.now() - lastDroneSpawn > ((practiceMode) ? 4000 : 2000)) {
+        lastDroneSpawn = Date.now();
+        ++dronecount;
+    }
+
+    if (wildDrones.length < dronecount) {
+        let newDrone = {
+            x: Math.random() * map_width,
+            y: Math.random() * map_height,
+            vx: 0,
+            vy: 0,
+            direction: Math.random() * Math.PI * 2,
+            nextChange: Date.now()
+        }
+
+        while (collide(newDrone.x, newDrone.y, drone_radius, player.x, player.y, player_radius * 4)) {
+            newDrone.x = Math.random() * map_width;
+            newDrone.y = Math.random() * map_height;
+        }
+
+        wildDrones.push(newDrone);
+    }
+
+    for (const [index, drone] of wildDrones.entries()) {
+        let vx = Math.cos(drone.direction) * drone_MaxSpeed;
+        let vy = Math.sin(drone.direction) * drone_MaxSpeed;
+
+        if (Date.now() > drone.nextChange) {
+            drone.direction = Math.random() * Math.PI * 2;
+            vx = Math.cos(drone.direction) * drone_MaxSpeed;
+            vy = Math.sin(drone.direction) * drone_MaxSpeed;
+            let nx = drone.x + vx;
+            let ny = drone.y + vy;
+            while (nx < 0 || nx > map_width || ny < 0 || ny > map_height) {
+                drone.direction = Math.random() * Math.PI * 2;
+                vx = Math.cos(drone.direction) * drone_MaxSpeed;
+                vy = Math.sin(drone.direction) * drone_MaxSpeed;
+                nx = drone.x + vx;
+                ny = drone.y + vy;
+            }
+
+            drone.nextChange = Date.now() + (Math.floor(800 + Math.random() * 700)) * ((practiceMode) ? 2 : 1);
+        }
+
+
+        drone.vx = lerp(drone.vx, vx, drone_accel);
+        drone.vy = lerp(drone.vy, vy, drone_accel);
+        
+        let spd = Math.hypot(drone.vx, drone.vy);
+        if (spd > drone_MaxSpeed) {
+            drone.vx = drone.vx / spd * drone_MaxSpeed;
+            drone.vy = drone.vy / spd * drone_MaxSpeed;
+        }
+
+        drone.x += drone.vx;
+        drone.y += drone.vy;
+
+        if (collide(drone.x, drone.y, drone_radius, player.x, player.y, player_radius)) {
+            --player.hp;
+            if (player.hp <= 0) {
+                playerDead = true;
+                pause = true;
+                pauseTime = Date.now();
+            }
+            wildDrones.splice(index, 1);
+        }
+    }
+
+    for (let drone of wildDrones) {
+        if (drone.x < 0) drone.x = 0;
+        if (drone.x > map_width) drone.x = map_width;
+        if (drone.y < 0) drone.y = 0;
+        if (drone.y > map_height) drone.y = map_height;
+    }
+}
+
+
 function handleTargets() {
     while (targets.length < 7) {
         let newTarget = {
@@ -308,7 +437,21 @@ function handleTargets() {
                     D: Math.random() < 0.5,
                 }
                 
+                let W = target.keys.W;
+                let A = target.keys.A;
+                let S = target.keys.S;
+                let D = target.keys.D;
+                
                 potential = Number(target.keys.W) - Number(target.keys.S) + Number(target.keys.D) - Number(target.keys.A);
+                if (!W && !S) {
+                    if (A && target.x === 0) potential = 0;
+                    if (D && target.x === map_width) potential = 0;
+                }
+
+                if (!A && !D) {
+                    if (W && target.y === 0) potential = 0;
+                    if (S && target.y === map_height) potential = 0;
+                }
             } while (potential === 0);
             target.nextChange = Date.now() + (Math.floor(700 + Math.random() * 700)) * ((practiceMode) ? 2 : 1);
         }
@@ -384,15 +527,46 @@ function gameCycle() {
         drawPlayerDrones();
         drawTargets();
     }
-    drawPlayer();
+
+    if (mode === "dodge") {
+        drawWildDrones();
+    }
+
+    if (player.hp > 0) drawPlayer();
     ctx.restore();
 
+    ctx.font = " 600 25px ubuntu";
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#ffffff";
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = 5;
     if (mode === "aim") {
-        ctx.font = " 600 25px ubuntu";
-        ctx.textAlign = "left";
+
+        ctx.strokeText("Kills: " + kill_count.toString(), 10, 70);
+        ctx.fillText("Kills: " + kill_count.toString(), 10, 70);
+
         ctx.fillStyle = "#ffffff";
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 5;
+        if (startTime !== Date.now()) {
+            let kps = (kill_count / (Date.now() - startTime) * 1000).toFixed(3);
+            ctx.strokeText("Kills per second: " + kps.toString(), 10, 160);
+            ctx.fillText("Kills per second: " + kps.toString(), 10, 160);
+        }
+    }
+
+    if (mode === "dodge") {
+        ctx.save()
+        if (playerDead) {
+            ctx.font = "600 45px ubuntu";
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = 8;
+
+            ctx.strokeText("PRESS ENTER TO RESTART", canvas.width / 2, canvas.height / 2);
+            ctx.fillText("PRESS ENTER TO RESTART", canvas.width / 2, canvas.height / 2);
+        }
+        ctx.restore();
+    }
         ctx.beginPath()
 
         if (!pause) {
@@ -403,9 +577,9 @@ function gameCycle() {
             ctx.fillText("Time(s): " + Math.floor((pauseTime - startTime) / 1000), 10, 40);
         }
         ctx.closePath();
-    
-        ctx.strokeText("Kills: " + kill_count.toString(), 10, 70);
-        ctx.fillText("Kills: " + kill_count.toString(), 10, 70);
+
+        ctx.strokeText("Max Drone Count: " + dronecount, 10, 70);
+            ctx.fillText("Max Drone Count: " + dronecount, 10, 70);
 
         ctx.fillStyle = "#d1ff05ff";
         ctx.strokeText("Practice Mode(Press [K]): " + ((practiceMode) ? "enabled" : "disabled"), 10, 100);
@@ -414,19 +588,16 @@ function gameCycle() {
         ctx.strokeText("Pause(Press [P]): " + ((pause) ? "enabled" : "disabled"), 10, 130);
         ctx.fillText("Pause(Press [P]): " + ((pause) ? "enabled" : "disabled"), 10, 130);
 
-        ctx.fillStyle = "#ffffff";
-        if (startTime !== Date.now()) {
-            let kps = (kill_count / (Date.now() - startTime) * 1000).toFixed(3);
-            ctx.strokeText("Kills per second: " + kps.toString(), 10, 160);
-            ctx.fillText("Kills per second: " + kps.toString(), 10, 160);
-        }
-    }
+        
 
     
-    if (!pause) handlePlayerMovement();
+    if (!pause && player.hp > 0) handlePlayerMovement();
     if (mode === "aim" && !pause) {
         handlePlayerDrones();
         handleTargets();
+    }
+    if (mode === "dodge" && !pause && player.hp > 0) {
+        handleWildDrones();
     }
 }
 
@@ -458,6 +629,12 @@ ctx = canvas.getContext("2d");
 
     startButton.onclick = () => {
         mode = chosenMode;
+        if (mode === "dodge") {
+            map_width = 600;
+            map_height = 600;
+            player.x = Math.random() * map_width;
+            player.y = Math.random() * map_height;
+        }
         menu.style.display = "none";
         canvas.style.visibility = "visible";
         resizeCanvas();
@@ -477,6 +654,13 @@ document.addEventListener('keydown', function(event) {
         canvas.style.visibility = "visible";
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
+
+        if (mode === "dodge") {
+            map_width = 600;
+            map_height = 600;
+            player.x = Math.random() * map_width;
+            player.y = Math.random() * map_height;
+        }
         startTime = Date.now();
         setInterval(gameCycle, 1000 / 60);
     }
@@ -500,7 +684,6 @@ document.addEventListener('keydown', function(event) {
     }
   }
 
-  if (mode === "aim") {
     if (event.code === "KeyK") {
         practiceMode = !practiceMode;
         if (practiceMode) {
@@ -522,14 +705,36 @@ document.addEventListener('keydown', function(event) {
         }
     }
 
-    if (event.code === "KeyP") {
+    if (event.code === "KeyP" && player.hp > 0) {
         pause = !pause;
         if (!pause) {
             startTime += Date.now() - pauseTime;
         }
         pauseTime = Date.now();
     }
-  }
+
+    if (mode === "dodge" && playerDead) {
+        if (event.code === "Enter") {
+            player = {
+                x: Math.random() * map_width,
+                y: Math.random() * map_height,
+                vx: 0,
+                vy: 0,
+                hp: 8
+            }
+
+            targets = [];
+
+            playerDrones = [];
+            wildDrones = [];
+            dronecount = 0;
+            playerDead = false;
+            lastDroneSpawn = Date.now();
+            startTime = Date.now();
+            pause = false;
+            practiceMode = false;
+        }
+    }
 });
 
 
