@@ -556,7 +556,7 @@ function handleWildDrones() {
             nextChange: Date.now()
         }
 
-        while (collide(newDrone.x, newDrone.y, drone_radius, player.x, player.y, player_radius * 4)) {
+        while (collide(newDrone.x, newDrone.y, drone_radius, player.x, player.y, player_radius * 5)) {
             newDrone.x = Math.random() * map_width;
             newDrone.y = Math.random() * map_height;
         }
@@ -976,6 +976,7 @@ function gameCycle() {
         ctx.fillStyle = "#ffffff";
         if (startTime !== Date.now()) {
             let kps = (kill_count / (Date.now() - startTime) * 1000).toFixed(3);
+            if (pause) kps = (kill_count / (Date.now() - pauseTime) * 1000).toFixed(3);
             ctx.strokeText("Kills per second: " + kps.toString(), 10, 160);
             ctx.fillText("Kills per second: " + kps.toString(), 10, 160);
         }
