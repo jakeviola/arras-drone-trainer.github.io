@@ -564,8 +564,13 @@ function gameCycle() {
 
             ctx.strokeText("PRESS ENTER TO RESTART", canvas.width / 2, canvas.height / 2);
             ctx.fillText("PRESS ENTER TO RESTART", canvas.width / 2, canvas.height / 2);
+
+            
         }
         ctx.restore();
+
+        ctx.strokeText("Max Drone Count: " + dronecount, 10, 70);
+        ctx.fillText("Max Drone Count: " + dronecount, 10, 70);
     }
         ctx.beginPath()
 
@@ -577,9 +582,6 @@ function gameCycle() {
             ctx.fillText("Time(s): " + Math.floor((pauseTime - startTime) / 1000), 10, 40);
         }
         ctx.closePath();
-
-        ctx.strokeText("Max Drone Count: " + dronecount, 10, 70);
-            ctx.fillText("Max Drone Count: " + dronecount, 10, 70);
 
         ctx.fillStyle = "#d1ff05ff";
         ctx.strokeText("Practice Mode(Press [K]): " + ((practiceMode) ? "enabled" : "disabled"), 10, 100);
@@ -667,19 +669,19 @@ document.addEventListener('keydown', function(event) {
    }
 
   if (mode !== "menu") {
-    if (event.code === 'KeyW') {
+    if (event.code === 'KeyW' || event.code === "ArrowUp") {
         controlKeys.W = true;
     }
 
-    if (event.code === "KeyS") {
+    if (event.code === "KeyS" || event.code === "ArrowDown") {
         controlKeys.S = true;
     }
 
-    if (event.code === "KeyA") {
+    if (event.code === "KeyA" || event.code === "ArrowLeft") {
         controlKeys.A = true;
     }
 
-    if (event.code === "KeyD") {
+    if (event.code === "KeyD" || event.code === "ArrowRight") {
         controlKeys.D = true;
     }
   }
@@ -741,19 +743,19 @@ document.addEventListener('keydown', function(event) {
 document.addEventListener('keyup', function(event) {
   // Check if the 'Enter' key was pressed
   if (mode !== "menu") {
-    if (event.code === 'KeyW') {
+    if (event.code === 'KeyW' || event.code === "ArrowUp") {
         controlKeys.W = false;
     }
 
-    if (event.code === "KeyS") {
+    if (event.code === "KeyS" || event.code === "ArrowDown") {
         controlKeys.S = false;
     }
 
-    if (event.code === "KeyA") {
+    if (event.code === "KeyA" || event.code === "ArrowLeft") {
         controlKeys.A = false;
     }
 
-    if (event.code === "KeyD") {
+    if (event.code === "KeyD" || event.code === "ArrowRight") {
         controlKeys.D = false;
     }
   }
