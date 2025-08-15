@@ -25,6 +25,8 @@ let playerReload = 2000;
 
 let startTime = Date.now();
 let kill_count = 0;
+let hit_count = 0;
+let hps_saved = 0;
 let practiceMode = false;
 let pause = false;
 let pauseTime = Date.now();
@@ -135,6 +137,8 @@ let controlKeys = {
 
 
 function restart() {
+            startTime = Date.now();
+            hit_count = 0;
             player = {
                 x: Math.random() * map_width,
                 y: Math.random() * map_height,
@@ -912,7 +916,10 @@ function handleEnemy() {
             let drone = playerDrones[i];
             if (collide(enemy.x, enemy.y, player_radius, drone.x, drone.y, drone_radius)) {
                 playerDrones.splice(i, 1);
-                if (Math.abs(enemy.x - player.x) >= canvas.width / 2 || Math.abs(enemy.y - player.y) >= canvas.height / 2) enemy.hp--;
+                if (Math.abs(enemy.x - player.x) >= canvas.width / 2 || Math.abs(enemy.y - player.y) >= canvas.height / 2) {
+                    enemy.hp--;
+                    hit_count++;
+                }
             }
         }
 
@@ -987,9 +994,13 @@ function gameCycle() {
         ctx.fillText("Kills: " + kill_count.toString(), 10, 70);
         ctx.fillStyle = "#ffffff";
         if (startTime !== Date.now()) {
-            let kps = (kill_count / (Date.now() - startTime) * 1000).toFixed(3);
-            ctx.strokeText("Kills per second: " + kps.toString(), 10, 160);
-            ctx.fillText("Kills per second: " + kps.toString(), 10, 160);
+            let kps = (hit_count / (Date.now() - startTime) * 1000).toFixed(3);
+            if (kps != 0.000) hps_saved = kps;
+            ctx.strokeText("Hits per second: " + kps.toString(), 10, 160);
+            ctx.fillText("Hits per second: " + kps.toString(), 10, 160);
+
+            ctx.strokeText("Last HPS: " + hps_saved.toString(), 10, 190);
+            ctx.fillText("Last HPS: " + hps_saved.toString(), 10, 190);
         }
     }
     if (mode === "dodge") {
