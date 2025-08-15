@@ -12,6 +12,7 @@ let mouseIsDown = false;
 let map_width = 1300;
 let map_height = 1300;
 let player_radius = 33;
+let enemy_radius = 33;
 let tank_MaxSpeed = 5;
 let player_accel = 0.07;
 
@@ -51,6 +52,76 @@ let targets = [];
 
 let playerDrones = [];
 let wildDrones = [];
+let enemy = {
+            x: Math.random() * map_width,
+            y: Math.random() * map_height,
+            vx: 0,
+            vy: 0,
+            hp: 16,
+            keys: {
+            W: false,
+            A: false,
+            S: false,
+            D: false
+            },
+            nextChange: Date.now(),
+            nextAimChange: Date.now(),
+            mx: 0,
+            my: 0,
+            repel: true
+};
+
+enemy.mx = enemy.x;
+enemy.my = enemy.y;
+
+let enemyDrones = [{
+    x: enemy.x,
+    y: enemy.y,
+    vx: 0,
+    vy: 0
+},
+{
+    x: enemy.x,
+    y: enemy.y,
+    vx: 0,
+    vy: 0
+},
+{
+    x: enemy.x,
+    y: enemy.y,
+    vx: 0,
+    vy: 0
+},
+{
+    x: enemy.x,
+    y: enemy.y,
+    vx: 0,
+    vy: 0
+},
+{
+    x: enemy.x,
+    y: enemy.y,
+    vx: 0,
+    vy: 0
+},
+{
+    x: enemy.x,
+    y: enemy.y,
+    vx: 0,
+    vy: 0
+},
+{
+    x: enemy.x,
+    y: enemy.y,
+    vx: 0,
+    vy: 0
+},
+{
+    x: enemy.x,
+    y: enemy.y,
+    vx: 0,
+    vy: 0
+}];
 let dronecount = 0;
 let playerDead = false;
 let lastDroneSpawn = Date.now();
@@ -62,6 +133,88 @@ let controlKeys = {
     D: false
 }
 
+
+function restart() {
+            player = {
+                x: Math.random() * map_width,
+                y: Math.random() * map_height,
+                vx: 0,
+                vy: 0,
+                hp: 8
+            }
+
+            playerDrones = [];
+            enemy = {
+                x: Math.random() * map_width,
+                y: Math.random() * map_height,
+                vx: 0,
+                vy: 0,
+                hp: 16,
+                keys: {
+                    W: false,
+                    A: false,
+                    S: false,
+                    D: false
+                },
+                nextChange: Date.now(),
+                nextAimChange: Date.now(),
+                mx: 0,
+                my: 0,
+                repel: false
+            };
+
+            enemy.mx = enemy.x;
+            enemy.my = enemy.y;
+
+            enemyDrones = [{
+                x: enemy.x,
+                y: enemy.y,
+                vx: 0,
+                vy: 0
+            },
+            {
+                x: enemy.x,
+                y: enemy.y,
+                vx: 0,
+                vy: 0
+            },
+            {
+                x: enemy.x,
+                y: enemy.y,
+                vx: 0,
+                vy: 0
+            },
+            {
+                x: enemy.x,
+                y: enemy.y,
+                vx: 0,
+                vy: 0
+            },
+            {
+                x: enemy.x,
+                y: enemy.y,
+                vx: 0,
+                vy: 0
+            },
+            {
+                x: enemy.x,
+                y: enemy.y,
+                vx: 0,
+                vy: 0
+            },
+            {
+                x: enemy.x,
+                y: enemy.y,
+                vx: 0,
+                vy: 0
+            },
+            {
+                x: enemy.x,
+                y: enemy.y,
+                vx: 0,
+                vy: 0
+            }];
+        }
 
 function collide(x, y, r, X, Y, R) {
     return Math.hypot(X - x, Y - y) < (r + R);
@@ -184,6 +337,44 @@ function drawWildDrones() {
     ctx.restore();
 }
 
+
+function drawEnemyDrones() {
+    ctx.save();
+    ctx.fillStyle = colors.enemy;
+    ctx.strokeStyle = "#373834";
+    for (let drone of enemyDrones) {
+        ctx.save();
+        
+        
+        ctx.translate(drone.x, drone.y)
+
+        let R = drone_radius * 2;
+        let x1 = R;
+        let y1 = 0;
+
+        let x2 = R * Math.cos(Math.PI * 2 / 3);
+        let y2 = R * Math.sin(Math.PI * 2 / 3);
+
+        let x3 = R * Math.cos(Math.PI * 4 / 3);
+        let y3 = R * Math.sin(Math.PI * 4 / 3);
+
+        let angle = Math.atan2(drone.vy, drone.vx);
+        
+        ctx.rotate(angle);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.lineTo(x3, y3);
+        ctx.closePath()
+
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+    }
+    ctx.restore();
+}
+
+
 function drawTargets() {
     ctx.save();
         for (let target of targets) {
@@ -203,6 +394,27 @@ function drawTargets() {
                 ctx.fillRect(target.x - 38, target.y + 47, 76 * target.hp / 16, 4);
             }
         }
+    ctx.restore();
+}
+
+
+function drawEnemy() {
+    ctx.save();
+            ctx.fillStyle = colors.enemy;
+            ctx.strokeStyle = "#373834";
+            ctx.beginPath();
+            ctx.arc(enemy.x, enemy.y, enemy_radius, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            if (enemy.hp < 16) {
+                ctx.fillStyle = "#373834";
+                ctx.fillRect(enemy.x - 40, enemy.y + 45, 80, 8);
+
+                ctx.fillStyle = colors.health;
+                ctx.fillRect(enemy.x - 38, enemy.y + 47, 76 * enemy.hp / 16, 4);
+            }
     ctx.restore();
 }
 
@@ -406,6 +618,57 @@ function handleWildDrones() {
 }
 
 
+function handleEnemyDrones() {
+    for (const [index, drone] of enemyDrones.entries()) {
+        let ax = enemy.mx + enemy.x - drone.x;
+        let ay = enemy.my + enemy.y - drone.y;
+
+        let dst = Math.hypot(ax, ay);
+        ax = ax / dst * drone_MaxSpeed;
+        ay = ay / dst * drone_MaxSpeed;
+
+        if (enemy.repel) {
+            drone.vx = lerp(drone.vx, -ax, drone_accel);
+            drone.vy = lerp(drone.vy, -ay, drone_accel);
+        } else {
+            drone.vx = lerp(drone.vx, ax, drone_accel);
+            drone.vy = lerp(drone.vy, ay, drone_accel);
+        }
+
+        let spd = Math.hypot(drone.vx, drone.vy);
+        if (spd > drone_MaxSpeed) {
+            drone.vx = drone.vx / spd * drone_MaxSpeed;
+            drone.vy = drone.vy / spd * drone_MaxSpeed;
+        }
+
+        drone.x += drone.vx;
+        drone.y += drone.vy;
+    }
+
+    for (let drone of enemyDrones) {
+        for (let drone2 of enemyDrones) {
+            if (drone !== drone2 && collide(drone.x, drone.y, drone_radius, drone2.x, drone2.y, drone_radius)) {
+                let dvx = drone2.x - drone.x;
+                let dvy = drone2.y - drone.y;
+                
+                if (dvx === 0 && dvy === 0) dvx = 0.001;
+                let ddst = Math.hypot(dvx, dvy); 
+                dvx = dvx / ddst * drone_radius * 2;
+                dvy = dvy / ddst * drone_radius * 2;
+                drone2.x = drone.x + dvx;
+                drone2.y = drone.y + dvy;
+            }
+        }
+    }
+
+    for (let drone of enemyDrones) {
+        if (drone.x < 0) drone.x = 0;
+        if (drone.x > map_width) drone.x = map_width;
+        if (drone.y < 0) drone.y = 0;
+        if (drone.y > map_height) drone.y = map_height;
+    }
+}
+
 function handleTargets() {
     while (targets.length < 7) {
         let newTarget = {
@@ -512,6 +775,161 @@ function handleTargets() {
 }
 
 
+function handleEnemy() {
+        if (Date.now() > enemy.nextChange) {
+            let potential = 1;
+            do {
+                enemy.keys = {
+                    W: Math.random() < 0.5,
+                    A: Math.random() < 0.5,
+                    S: Math.random() < 0.5,
+                    D: Math.random() < 0.5,
+                }
+                
+                let W = enemy.keys.W;
+                let A = enemy.keys.A;
+                let S = enemy.keys.S;
+                let D = enemy.keys.D;
+         
+                potential = Number(enemy.keys.W) - Number(enemy.keys.S) + Number(enemy.keys.D) - Number(enemy.keys.A);
+                if (!W && !S) {
+                    if (A && enemy.x === 0) potential = 0;
+                    if (D && enemy.x === map_width) potential = 0;
+                }
+
+                if (!A && !D) {
+                    if (W && enemy.y === 0) potential = 0;
+                    if (S && enemy.y === map_height) potential = 0;
+                }
+            } while (potential === 0);
+
+            if (Math.abs(enemy.x - player.x) < canvas.width / 2 && Math.abs(enemy.y - player.y) < canvas.height / 2) {
+                let vDst = canvas.height / 2 - Math.abs(enemy.y - player.y);
+                let hDst = canvas.width / 2 - Math.abs(enemy.x - player.x);
+
+                if (vDst <= hDst) {
+                    if (enemy.y >= player.y) {
+                        enemy.keys.S = true;
+                        enemy.keys.W = false;
+                    }
+
+                    if (enemy.y < player.y) {
+                        enemy.keys.W = true;
+                        enemy.keys.S = false;
+                    }
+                } else {
+                    if (enemy.x >= player.x) {
+                        enemy.keys.D = true;
+                        enemy.keys.A = false;
+                    } else {
+                        enemy.keys.D = false;
+                        enemy.keys.A = true;
+                    }
+                }
+            }
+            enemy.nextChange = Date.now() + (Math.floor(800 + Math.random() * 800)) * ((practiceMode) ? 2 : 1);
+        }
+
+        if (Date.now() > enemy.nextAimChange) {
+            enemy.mx = Math.random() * canvas.width - canvas.width / 2;
+            enemy.my = Math.random() * canvas.height - canvas.height / 2;
+            enemy.repel = !enemy.repel;
+            enemy.nextAimChange = Date.now() + (Math.floor(500 + Math.random() * 500)) * ((practiceMode) ? 2 : 1);
+
+
+            let dstSum = 0;
+            let cnt = 0;
+            let minX = map_width * 2;
+            let maxX = 0;
+            let minY = map_height * 2;
+            let maxY = 0;
+
+            for (let [index, drone1] of enemyDrones.entries()) {
+                if (drone1.x < minX) minX = drone1.x;
+                if (drone1.x > maxX) maxX = drone1.x;
+                if (drone1.y < minY) minY = drone1.y;
+                if (drone1.y > maxY) maxY = drone1.y;
+
+                for (let [index2, drone2] of enemyDrones.entries()) {
+                    if (index !== index2) {
+                        let dst = Math.hypot(drone2.x - drone1.x, drone2.y - drone1.y);
+                        dstSum += dst;
+                        ++cnt;
+                    }
+                }
+            }
+            let averageDst = dstSum / cnt;
+            if (averageDst < (200 + Math.random() * 100)) {
+                enemy.mx = minX + Math.random() * (maxX - minX) - enemy.x;
+                enemy.my = minY + Math.random() * (maxY - minY) - enemy.y;
+                enemy.repel = true;
+            }
+
+            let dronesInFOV = 0;
+            for (let drone of enemyDrones) {
+                if (Math.abs(drone.x - enemy.x) < canvas.width / 2 && Math.abs(drone.y - enemy.y) < canvas.height / 2) dronesInFOV++;
+            }
+
+            if (dronesInFOV < 3) {
+                enemy.repel = false;
+                enemy.mx = Math.random() * canvas.width - canvas.width / 2;
+                enemy.my = Math.random() * canvas.height - canvas.height / 2;
+            }
+        }
+
+        if (enemy.keys.W) {
+            enemy.vy = lerp(enemy.vy, -tank_MaxSpeed, player_accel);
+        }
+
+        if (enemy.keys.S) {
+            enemy.vy = lerp(enemy.vy, tank_MaxSpeed, player_accel);
+        }
+
+        if (!enemy.keys.W && !enemy.keys.S) {
+            enemy.vy = lerp(enemy.vy, 0, player_accel);
+        }
+
+        if (enemy.keys.A) {
+            enemy.vx = lerp(enemy.vx, -tank_MaxSpeed, player_accel);
+        }
+
+        if (enemy.keys.D) {
+            enemy.vx = lerp(enemy.vx, tank_MaxSpeed, player_accel);
+        }
+
+        if (!enemy.keys.A && !enemy.keys.D) {
+            enemy.vx = lerp(enemy.vx, 0, player_accel);
+        }
+
+    
+        let spd = Math.hypot(enemy.vy, enemy.vx);
+        if (spd > tank_MaxSpeed) {
+            enemy.vx = enemy.vx / spd * tank_MaxSpeed;
+            enemy.vy = enemy.vy / spd * tank_MaxSpeed;
+        }
+
+        for (let i = 0; i < playerDrones.length; ++i) {
+            let drone = playerDrones[i];
+            if (collide(enemy.x, enemy.y, player_radius, drone.x, drone.y, drone_radius)) {
+                playerDrones.splice(i, 1);
+                if (Math.abs(enemy.x - player.x) >= canvas.width / 2 || Math.abs(enemy.y - player.y) >= canvas.height / 2) enemy.hp--;
+            }
+        }
+
+        if (enemy.hp <= 0) {
+            kill_count++;
+            restart();
+        }
+
+        enemy.x += enemy.vx;
+        enemy.y += enemy.vy;
+
+        if (enemy.x < 0) enemy.x = 0;
+        if (enemy.x > map_width) enemy.x = map_width;
+        if (enemy.y < 0) enemy.y = 0;
+        if (enemy.y > map_height) enemy.y = map_height;
+}
+
 function gameCycle() {
     ctx.save()
         ctx.fillStyle = colors.darkerbackground;
@@ -526,6 +944,16 @@ function gameCycle() {
     if (mode === "aim") {
         drawPlayerDrones();
         drawTargets();
+    }
+
+    if (mode === "repel") {
+        drawPlayerDrones();
+
+        if (enemy.hp > 0) {
+            drawEnemyDrones();
+        }
+
+        drawEnemy();
     }
 
     if (mode === "dodge") {
@@ -553,6 +981,16 @@ function gameCycle() {
         }
     }
 
+    if (mode === "repel") {
+        ctx.strokeText("Kills: " + kill_count.toString(), 10, 70);
+        ctx.fillText("Kills: " + kill_count.toString(), 10, 70);
+        ctx.fillStyle = "#ffffff";
+        if (startTime !== Date.now()) {
+            let kps = (kill_count / (Date.now() - startTime) * 1000).toFixed(3);
+            ctx.strokeText("Kills per second: " + kps.toString(), 10, 160);
+            ctx.fillText("Kills per second: " + kps.toString(), 10, 160);
+        }
+    }
     if (mode === "dodge") {
         ctx.save()
         if (playerDead) {
@@ -598,6 +1036,15 @@ function gameCycle() {
         handlePlayerDrones();
         handleTargets();
     }
+
+    if (mode === "repel" && !pause) {
+        handlePlayerDrones();
+        if (enemy.hp > 0) {
+            handleEnemy();
+            handleEnemyDrones();
+        }
+    }
+
     if (mode === "dodge" && !pause && player.hp > 0) {
         handleWildDrones();
     }
@@ -623,7 +1070,7 @@ ctx = canvas.getContext("2d");
                 } else if (this.value === 'dodge') {
                     description.textContent = 'This mode trains your skill to avoid enemy\'s drones. You need this to prevent yourself from getting hit. Just drones that spawn as long as you can without getting hit.';
                 } else if (this.value === 'repel') {
-                    description.textContent = 'This mode trains your skill to find your opponent\'s tank by his drones when he is out of your field of view. Assume where your opponent is by his drones and repel your drones with right click towards him until you hit him.';
+                    description.textContent = 'This mode trains your skill to find your opponent\'s tank by his drones when he is out of your field of view. Assume where your opponent is by his drones and repel your drones with right click towards him until you hit him. ENEMY ONLY GETS DAMAGED OUTSIDE OF YOUR FOV.';
                 }
             }
         });
@@ -636,6 +1083,63 @@ ctx = canvas.getContext("2d");
             map_height = 600;
             player.x = Math.random() * map_width;
             player.y = Math.random() * map_height;
+        }
+
+        if (mode === "repel") {
+            map_width = 2200;
+            map_height = 2200;
+            player.x = Math.random() * map_width;
+            player.y = Math.random() * map_height;
+            enemy.x = Math.random() * map_width;
+            enemy.y = Math.random() * map_height;
+            enemyDrones = [{
+    x: enemy.x,
+    y: enemy.y,
+    vx: 0,
+    vy: 0
+},
+{
+    x: enemy.x,
+    y: enemy.y,
+    vx: 0,
+    vy: 0
+},
+{
+    x: enemy.x,
+    y: enemy.y,
+    vx: 0,
+    vy: 0
+},
+{
+    x: enemy.x,
+    y: enemy.y,
+    vx: 0,
+    vy: 0
+},
+{
+    x: enemy.x,
+    y: enemy.y,
+    vx: 0,
+    vy: 0
+},
+{
+    x: enemy.x,
+    y: enemy.y,
+    vx: 0,
+    vy: 0
+},
+{
+    x: enemy.x,
+    y: enemy.y,
+    vx: 0,
+    vy: 0
+},
+{
+    x: enemy.x,
+    y: enemy.y,
+    vx: 0,
+    vy: 0
+}];
         }
         menu.style.display = "none";
         canvas.style.visibility = "visible";
@@ -663,6 +1167,64 @@ document.addEventListener('keydown', function(event) {
             player.x = Math.random() * map_width;
             player.y = Math.random() * map_height;
         }
+
+        if (mode === "repel") {
+            map_width = 2200;
+            map_height = 2200;
+            player.x = Math.random() * map_width;
+            player.y = Math.random() * map_height;
+            enemy.x = Math.random() * map_width;
+            enemy.y = Math.random() * map_height;
+            enemyDrones = [{
+    x: enemy.x,
+    y: enemy.y,
+    vx: 0,
+    vy: 0
+},
+{
+    x: enemy.x,
+    y: enemy.y,
+    vx: 0,
+    vy: 0
+},
+{
+    x: enemy.x,
+    y: enemy.y,
+    vx: 0,
+    vy: 0
+},
+{
+    x: enemy.x,
+    y: enemy.y,
+    vx: 0,
+    vy: 0
+},
+{
+    x: enemy.x,
+    y: enemy.y,
+    vx: 0,
+    vy: 0
+},
+{
+    x: enemy.x,
+    y: enemy.y,
+    vx: 0,
+    vy: 0
+},
+{
+    x: enemy.x,
+    y: enemy.y,
+    vx: 0,
+    vy: 0
+},
+{
+    x: enemy.x,
+    y: enemy.y,
+    vx: 0,
+    vy: 0
+}];
+        }
+
         startTime = Date.now();
         setInterval(gameCycle, 1000 / 60);
     }
