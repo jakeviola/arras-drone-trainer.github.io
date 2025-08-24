@@ -1,0 +1,81 @@
+body {
+    background-color: rgb(26, 26, 26);
+    margin: 0; 
+    overflow: hidden;
+}
+
+#title {
+    width: 100%;
+    text-align: center;
+    font-family: 'Ubuntu';
+    font-size: 30pt;
+    color: rgb(224, 101, 29);
+}
+
+.radio-group {
+    width: 50%;
+    margin: auto;
+    display: flex;
+    gap: 200px; /* Adjust as needed for spacing */
+    font-family: 'Ubuntu';
+    font-size: 20pt;
+    font-weight: 600;
+    color: rgb(248, 248, 95);
+    line-height: 40px;
+    vertical-align: center;
+}
+
+.checkbox {
+    width: 20px;
+    height: 20px;
+    accent-color: #88faae;
+}
+
+#description {
+    font-family: 'Ubuntu';
+    font-size: 20pt;
+    width: 60%;
+    padding: 40px;
+    margin:auto;
+    text-align: center;
+    color:rgb(121, 192, 255);
+}
+
+#startButtonDiv {
+    display: flex;
+    margin: 0 auto;
+    justify-content: center;
+}
+
+#startButton {
+    margin: auto;
+    width: 190px;
+    height: 70px;
+    font-family: 'Ubuntu';
+    font-size: 25pt;
+    font-weight: 600;
+    line-height: 25pt;
+    border-radius: 0px;
+    background-color: #dddddd;
+    box-shadow: none;
+    outline: none;
+    border: none;
+}
+
+#startButton:hover {
+    background-color: #aaaaaa;
+}
+
+#startButton:active {
+    background-color: #7a7a7a;
+}
+
+#note {
+    font-family: 'Ubuntu';
+    font-size: 20pt;
+    color: rgb(248, 248, 95);
+}
+
+#canvas {
+    visibility: hidden;
+}

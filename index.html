@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Arras Drone Trainer</title>
+            <link rel="icon" href="icon.png" type="image/png">
+        <link rel="stylesheet" href="styles.css">
+        <script src="script.js"></script>
+    </head>
+    <body>
+            <div id="menu">
+                <h1 id="title">Arras Drone Trainer (by Jake)</h1>
+                <div class="radio-group">
+                    <label>
+                        <input type="radio" id="option1" name="choice" value="aim" class="checkbox" checked>
+                        Aim
+                    </label>
+        
+                    <label>
+                        <input type="radio" id="option2" name="choice" value="dodge" class="checkbox">
+                        Dodge
+                    </label>
+        
+
+                    <label>
+                        <input type="radio" id="option3" name="choice" value="repel" class="checkbox">
+                        Repel
+                    </label>
+                </div>
+
+                <p id="description">Use left or right mouse to repel drones. [AVOID FOCUSING YOUR EYES ON 1 TARGET, IT HURTS YOUR EYES AND MAKES YOU WORSE AT GAME, SPREAD THE FOCUS ALL OVER THE SCREEN]. This mode trains your skill to control your drones. You need this to hit and damage your opponents. Try focusing on any target and perfectly following it with your drones until you kill it.</p>
+            
+                <div id="startButtonDiv">
+                    <button id="startButton">PLAY</button>
+                </div>
+
+                <p id="note">Trainer has practice mode. In practice mode, everything is slowed down by 50%(twice as slow), so you can practice doing it perfectly.</p>
+                <p id="note">Press [K] to toggle it.</p>
+            </div>
+
+            <canvas id="canvas"></canvas>
+        </body>
+</html>
